@@ -20,7 +20,6 @@ export class MenuService {
 
   //CREATE menu
   async create(request: CreateMenuRequest): Promise<MenuResponse> {
-    this.logger.info(`MenuService.create(${JSON.stringify(request)})`);
     const createRequest: CreateMenuRequest = this.validationService.validate(
       MenuValidation.CREATE,
       request,
@@ -43,18 +42,9 @@ export class MenuService {
       },
     });
 
-    return {
-      id: menu.id,
-      name: menu.name,
-      parentId: menu.parentId,
-      order: menu.order,
-      depth: menu.depth,
-      createdAt: menu.createdAt,
-      updatedAt: menu.updatedAt,
-    };
+    return menu;
   }
 
-  //GET all menus (tree structure)
   async findAll(): Promise<MenuResponse[]> {
     this.logger.info('MenuService.findAll()');
 
@@ -83,7 +73,6 @@ export class MenuService {
     return roots;
   }
 
-  //GET single menu
   async findById(id: string): Promise<MenuResponse> {
     this.logger.info(`MenuService.findById(${id})`);
     const menu = await this.prismaService.menu.findUnique({ where: { id } });
@@ -100,10 +89,7 @@ export class MenuService {
     };
   }
 
-  //UPDATE menu
   async update(id: string, request: UpdateMenuRequest): Promise<MenuResponse> {
-    this.logger.info(`MenuService.update(${id}, ${JSON.stringify(request)})`);
-
     const updateRequest = this.validationService.validate(
       MenuValidation.UPDATE,
       request,
@@ -113,10 +99,15 @@ export class MenuService {
     if (!menu) throw new NotFoundException('Menu not found');
 
     let depth = menu.depth;
-    if (updateRequest.parentId && updateRequest.parentId !== menu.parentId) {
-      const parent = await this.prismaService.menu.findUnique({
-        where: { id: updateRequest.parentId },
-      });
+    if (
+      updateRequest.parentId !== undefined &&
+      updateRequest.parentId !== menu.parentId
+    ) {
+      const parent = updateRequest.parentId
+        ? await this.prismaService.menu.findUnique({
+            where: { id: updateRequest.parentId },
+          })
+        : null;
       depth = parent ? parent.depth + 1 : 0;
     }
 
@@ -130,18 +121,30 @@ export class MenuService {
       },
     });
 
-    return {
-      id: updated.id,
-      name: updated.name,
-      parentId: updated.parentId,
-      order: updated.order,
-      depth: updated.depth,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-    };
+    if (
+      updateRequest.parentId !== undefined &&
+      updateRequest.parentId !== menu.parentId
+    ) {
+      await this.updateDescendantsDepth(updated.id, updated.depth);
+    }
+
+    return updated;
   }
 
-  //DELETE menu (and children)
+  private async updateDescendantsDepth(parentId: string, parentDepth: number) {
+    const children = await this.prismaService.menu.findMany({
+      where: { parentId },
+    });
+    for (const child of children) {
+      const newDepth = parentDepth + 1;
+      await this.prismaService.menu.update({
+        where: { id: child.id },
+        data: { depth: newDepth },
+      });
+      await this.updateDescendantsDepth(child.id, newDepth);
+    }
+  }
+
   async delete(id: string): Promise<void> {
     this.logger.info(`MenuService.delete(${id})`);
 
