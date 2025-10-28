@@ -1,8 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { PrismaService } from 'src/common/prisma.service';
@@ -22,10 +18,13 @@ export class MenuService {
     private prismaService: PrismaService,
   ) {}
 
-  // 🟩 CREATE menu
+  //CREATE menu
   async create(request: CreateMenuRequest): Promise<MenuResponse> {
     this.logger.info(`MenuService.create(${JSON.stringify(request)})`);
-    const createRequest: CreateMenuRequest = this.validationService.validate(MenuValidation.CREATE, request) as CreateMenuRequest;
+    const createRequest: CreateMenuRequest = this.validationService.validate(
+      MenuValidation.CREATE,
+      request,
+    ) as CreateMenuRequest;
 
     const parent = createRequest.parentId
       ? await this.prismaService.menu.findUnique({
@@ -55,15 +54,14 @@ export class MenuService {
     };
   }
 
-  // 🟨 GET all menus (tree structure)
+  //GET all menus (tree structure)
   async findAll(): Promise<MenuResponse[]> {
-    this.logger.debug('MenuService.findAll()');
+    this.logger.info('MenuService.findAll()');
 
     const menus = await this.prismaService.menu.findMany({
       orderBy: { order: 'asc' },
     });
 
-    // Buat Map biar mudah susun parent-child
     const menuMap = new Map<string, MenuResponse>();
     menus.forEach((m) => {
       menuMap.set(m.id, { ...m, children: [] });
@@ -85,9 +83,9 @@ export class MenuService {
     return roots;
   }
 
-  // 🟦 GET single menu
+  //GET single menu
   async findById(id: string): Promise<MenuResponse> {
-    this.logger.debug(`MenuService.findById(${id})`);
+    this.logger.info(`MenuService.findById(${id})`);
     const menu = await this.prismaService.menu.findUnique({ where: { id } });
     if (!menu) throw new NotFoundException('Menu not found');
 
@@ -102,9 +100,9 @@ export class MenuService {
     };
   }
 
-  // 🟧 UPDATE menu
+  //UPDATE menu
   async update(id: string, request: UpdateMenuRequest): Promise<MenuResponse> {
-    this.logger.debug(`MenuService.update(${id}, ${JSON.stringify(request)})`);
+    this.logger.info(`MenuService.update(${id}, ${JSON.stringify(request)})`);
 
     const updateRequest = this.validationService.validate(
       MenuValidation.UPDATE,
@@ -143,9 +141,9 @@ export class MenuService {
     };
   }
 
-  // 🟥 DELETE menu (and children)
+  //DELETE menu (and children)
   async delete(id: string): Promise<void> {
-    this.logger.debug(`MenuService.delete(${id})`);
+    this.logger.info(`MenuService.delete(${id})`);
 
     const menu = await this.prismaService.menu.findUnique({ where: { id } });
     if (!menu) throw new NotFoundException('Menu not found');
@@ -165,9 +163,9 @@ export class MenuService {
     }
   }
 
-  // 🟪 MOVE menu ke parent lain
+  //MOVE menu ke parent lain
   async move(id: string, newParentId: string | null): Promise<MenuResponse> {
-    this.logger.debug(`MenuService.move(${id}, ${newParentId})`);
+    this.logger.info(`MenuService.move(${id}, ${newParentId})`);
 
     const menu = await this.prismaService.menu.findUnique({ where: { id } });
     if (!menu) throw new NotFoundException('Menu not found');
@@ -194,9 +192,9 @@ export class MenuService {
     };
   }
 
-  // 🟫 REORDER menu
+  //REORDER menu
   async reorder(id: string, order: number): Promise<MenuResponse> {
-    this.logger.debug(`MenuService.reorder(${id}, order=${order})`);
+    this.logger.info(`MenuService.reorder(${id}, order=${order})`);
 
     const menu = await this.prismaService.menu.findUnique({ where: { id } });
     if (!menu) throw new NotFoundException('Menu not found');

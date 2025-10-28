@@ -21,7 +21,7 @@ import {
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
-  // 🟩 CREATE menu
+  //CREATE menu
   @Post()
   @HttpCode(200)
   async create(
@@ -31,21 +31,21 @@ export class MenuController {
     return { data: result };
   }
 
-  // 🟨 GET all menus (tree structure)
+  //GET all menus (tree structure)
   @Get()
   async findAll(): Promise<WebResponse<MenuResponse[]>> {
     const result = await this.menuService.findAll();
     return { data: result };
   }
 
-  // 🟦 GET single menu
+  //GET single menu
   @Get('/:id')
   async findById(@Param('id') id: string): Promise<WebResponse<MenuResponse>> {
     const result = await this.menuService.findById(id);
     return { data: result };
   }
 
-  // 🟧 UPDATE menu
+  //UPDATE menu
   @Put('/:id')
   async update(
     @Param('id') id: string,
@@ -55,7 +55,7 @@ export class MenuController {
     return { data: result };
   }
 
-  // 🟥 DELETE menu (and children)
+  //DELETE menu (and children)
   @Delete('/:id')
   @HttpCode(200)
   async delete(@Param('id') id: string): Promise<WebResponse<boolean>> {
@@ -63,7 +63,7 @@ export class MenuController {
     return { data: true };
   }
 
-  // 🟪 MOVE menu ke parent lain
+  //MOVE menu
   @Patch('/:id/move')
   async move(
     @Param('id') id: string,
