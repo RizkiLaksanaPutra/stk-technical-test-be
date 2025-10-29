@@ -1,0 +1,353 @@
+openapi: 3.0.3
+info:
+  title: Menu Tree System API
+  version: "1.0.0"
+  description: >
+    Backend API untuk manajemen **menu tree** (CRUD + move + reorder).
+    Semua response dibungkus dalam objek `WebResponse<T>`.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Menus
+    description: Endpoints untuk manajemen menu
+
+paths:
+  /api/menus:
+    get:
+      tags: [Menus]
+      summary: Get all menus (tree structure)
+      operationId: getMenus
+      responses:
+        "200":
+          description: List menu root dalam struktur tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseMenuArray"
+              examples:
+                ok:
+                  value:
+                    data:
+                      - id: "a1111111-2222-3333-4444-555555555555"
+                        name: "Systems"
+                        parentId: null
+                        order: 0
+                        depth: 0
+                        createdAt: "2025-01-01T00:00:00.000Z"
+                        updatedAt: "2025-01-01T00:00:00.000Z"
+                        children:
+                          - id: "b1111111-2222-3333-4444-555555555555"
+                            name: "System Code"
+                            parentId: "a1111111-2222-3333-4444-555555555555"
+                            order: 0
+                            depth: 1
+                            createdAt: "2025-01-01T00:00:00.000Z"
+                            updatedAt: "2025-01-01T00:00:00.000Z"
+    post:
+      tags: [Menus]
+      summary: Create new menu
+      operationId: createMenu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMenuRequest"
+            examples:
+              createRoot:
+                value:
+                  name: "Users & Group"
+              createChild:
+                value:
+                  name: "System Code"
+                  parentId: "a1111111-2222-3333-4444-555555555555"
+                  order: 0
+      responses:
+        "200":
+          description: Menu berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseMenu"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+
+  /api/menus/{id}:
+    get:
+      tags: [Menus]
+      summary: Get single menu
+      operationId: getMenuById
+      parameters:
+        - $ref: "#/components/parameters/MenuIdParam"
+      responses:
+        "200":
+          description: Detail menu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseMenu"
+        "404":
+          description: Menu not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+    put:
+      tags: [Menus]
+      summary: Update menu
+      operationId: updateMenu
+      parameters:
+        - $ref: "#/components/parameters/MenuIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMenuRequest"
+            examples:
+              rename:
+                value:
+                  name: "API List"
+              moveLevel:
+                value:
+                  parentId: "a1111111-2222-3333-4444-555555555555"
+                  order: 1
+      responses:
+        "200":
+          description: Menu ter-update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseMenu"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+        "404":
+          description: Menu not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+    delete:
+      tags: [Menus]
+      summary: Delete menu (and children)
+      operationId: deleteMenu
+      parameters:
+        - $ref: "#/components/parameters/MenuIdParam"
+      responses:
+        "200":
+          description: Menu (dan seluruh child) terhapus
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseBoolean"
+              examples:
+                ok:
+                  value: { data: true }
+        "404":
+          description: Menu not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+
+  /api/menus/{id}/move:
+    patch:
+      tags: [Menus]
+      summary: Move menu to a different parent
+      operationId: moveMenu
+      parameters:
+        - $ref: "#/components/parameters/MenuIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newParentId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: >
+                    UUID parent baru. `null` untuk dipindahkan menjadi root.
+            examples:
+              toRoot:
+                value: { newParentId: null }
+              toAnotherParent:
+                value: { newParentId: "a1111111-2222-3333-4444-555555555555" }
+      responses:
+        "200":
+          description: Menu berhasil dipindahkan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseMenu"
+        "404":
+          description: Menu atau parent tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+
+  /api/menus/{id}/reorder:
+    patch:
+      tags: [Menus]
+      summary: Reorder menu within the same level
+      operationId: reorderMenu
+      parameters:
+        - $ref: "#/components/parameters/MenuIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order]
+              properties:
+                order:
+                  type: integer
+                  minimum: 0
+                  description: Urutan (index) baru di level yang sama
+            examples:
+              toIndex1:
+                value: { order: 1 }
+      responses:
+        "200":
+          description: Urutan menu diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponseMenu"
+        "404":
+          description: Menu tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebError"
+
+components:
+  parameters:
+    MenuIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID menu
+
+  schemas:
+    # ==== Requests ====
+    CreateMenuRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID parent; null untuk root
+        order:
+          type: integer
+          minimum: 0
+        depth:
+          type: integer
+          minimum: 0
+          description: Diabaikan saat create (dihitung oleh server)
+
+    UpdateMenuRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        order:
+          type: integer
+          minimum: 0
+        depth:
+          type: integer
+          minimum: 0
+          description: Biasanya diatur server saat pindah parent
+
+    # ==== Entities / Responses ====
+    MenuResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        order:
+          type: integer
+        depth:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/MenuResponse"
+      required: [id, name, order, depth, createdAt, updatedAt]
+
+    WebResponseMenu:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/MenuResponse"
+        errors:
+          type: string
+
+    WebResponseMenuArray:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MenuResponse"
+        errors:
+          type: string
+
+    WebResponseBoolean:
+      type: object
+      properties:
+        data:
+          type: boolean
+        errors:
+          type: string
+
+    WebError:
+      type: object
+      properties:
+        errors:
+          type: string
+      example:
+        errors: "Menu not found"
