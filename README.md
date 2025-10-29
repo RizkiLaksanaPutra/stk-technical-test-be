@@ -35,13 +35,20 @@
 
 ### Setup Instructions
 
-1. **Install dependencies**
+1. **Clone the Repository**
+
+   ```bash
+   git clone https://github.com/RizkiLaksanaPutra/stk-technical-test-be.git
+   cd menu-tree-system-be
+   ```
+
+2. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-2. **Environment Configuration**
+3. **Environment Configuration**
 
    Create a `.env` file in the root directory:
 
@@ -51,7 +58,7 @@
 
    Replace `username`, `password`, and database credentials with your MySQL configuration.
 
-3. **Database Setup**
+4. **Database Setup**
 
    Initialize Prisma and create the database:
 
@@ -61,7 +68,7 @@
    npx prisma generate
    ```
 
-4. **Start the application**
+5. **Start the application**
 
    For development:
 
