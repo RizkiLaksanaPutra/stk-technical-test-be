@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  db:
+    image: mysql:8.0
+    container_name: be_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: menu_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: be_prod
+    env_file:
+      - ./.env.docker
+    environment:
+      DATABASE_URL: "mysql://root:root@db:3306/menu_db"
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  db_data:

@@ -95,6 +95,30 @@ The testing setup includes:
 - Unit tests with Jest
 - Integration tests with Supertest
 
+## 🐳 Run with Docker
+### 🧩 Development Mode (with Hot Reload)
+1. Make sure Docker and Docker Compose are installed.
+2. From the project root, run:
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+3. The backend will be available at http://localhost:3000 The MySQL database will be running at port 3307.
+4. To stop the containers:
+```bash
+docker compose -f docker-compose.dev.yml down
+```
+
+### 🚀 Production Mode (Optimized Multi-Stage Build)
+1. Build and run the production image:
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+2. The backend API will be served at http://localhost:3000
+3. To stop and remove containers:
+```bash
+docker compose -f docker-compose.prod.yml down
+```
+
 ## 📚 API Documentation
 
 *https://documenter.getpostman.com/view/44430374/2sB3WmUi9A*
